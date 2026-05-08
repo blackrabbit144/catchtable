@@ -15,7 +15,9 @@ function RegisterForm() {
   const [phone, setPhone]     = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
-  const [blocked, setBlocked] = useState<'closed' | 'full' | null>(null)
+  const [blocked, setBlocked] = useState<'closed' | 'full' | null>(
+    typeof window !== 'undefined' && !new URLSearchParams(window.location.search).get('token') ? 'closed' : null
+  )
 
   useEffect(() => {
     if (!token) { setBlocked('closed'); return }
