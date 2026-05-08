@@ -145,6 +145,7 @@ def admin_settings(request):
 # ── 관리자: 수신 시작 ──
 @api_view(['POST'])
 def admin_open(request):
+    Customer.objects.all().delete()
     qs = _get_settings()
     qs.is_open = True
     qs.registration_token = secrets.token_urlsafe(32)
