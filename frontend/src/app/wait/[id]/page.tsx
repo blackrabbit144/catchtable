@@ -22,6 +22,7 @@ export default function WaitPage({ params }: Props) {
       try {
         const data = await api.getCustomer(customerNumber)
         if (data.status === 'called') {
+          localStorage.removeItem('my_queue_number')
           router.replace(`/called/${customerNumber}`)
           return
         }

@@ -19,11 +19,13 @@ function RegisterForm() {
 
   useEffect(() => {
     if (!token) return
+    const saved = localStorage.getItem('my_queue_number')
+    if (saved) { router.replace(`/wait/${saved}`); return }
     api.getQueueStatus().then(s => {
       if (!s.is_open) setBlocked('closed')
       else if (s.is_full) setBlocked('full')
     }).catch(() => {})
-  }, [token])
+  }, [token, router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -32,6 +34,7 @@ function RegisterForm() {
     setError('')
     try {
       const customer = await api.register(name.trim(), phone.trim(), undefined, token)
+      localStorage.setItem('my_queue_number', String(customer.number))
       router.push(`/wait/${customer.number}`)
     } catch (err: unknown) {
       const status = (err as { status?: number }).status
