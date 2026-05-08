@@ -18,11 +18,12 @@ function RegisterForm() {
   const [blocked, setBlocked] = useState<'closed' | 'full' | null>(null)
 
   useEffect(() => {
+    if (!token) { setBlocked('closed'); return }
     api.getQueueStatus().then(s => {
       if (!s.is_open) setBlocked('closed')
       else if (s.is_full) setBlocked('full')
     }).catch(() => {})
-  }, [])
+  }, [token])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
