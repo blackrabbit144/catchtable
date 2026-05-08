@@ -68,6 +68,14 @@ def register(request):
     if ser.validated_data['token'] != qs.registration_token:
         return Response({'detail': 'invalid token'}, status=status.HTTP_403_FORBIDDEN)
 
+    # 重複チェック
+    existing = Customer.objects.filter(
+        phone=ser.validated_data['phone'],
+        status=Customer.STATUS_WAITING
+    ).first()
+    if existing:
+        return Response(CustomerSerializer(existing).data, status=status.HTTP_200_OK)
+
     # 上限チェック
     waiting_count = Customer.objects.filter(status=Customer.STATUS_WAITING).count()
     if waiting_count >= qs.max_count:
