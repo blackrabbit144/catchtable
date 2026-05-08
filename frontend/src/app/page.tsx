@@ -15,12 +15,10 @@ function RegisterForm() {
   const [phone, setPhone]     = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
-  const [blocked, setBlocked] = useState<'closed' | 'full' | null>(
-    typeof window !== 'undefined' && !new URLSearchParams(window.location.search).get('token') ? 'closed' : null
-  )
+  const [blocked, setBlocked] = useState<'closed' | 'full' | null>(null)
 
   useEffect(() => {
-    if (!token) { setBlocked('closed'); return }
+    if (!token) return
     api.getQueueStatus().then(s => {
       if (!s.is_open) setBlocked('closed')
       else if (s.is_full) setBlocked('full')
@@ -43,6 +41,22 @@ function RegisterForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!token) {
+    return (
+      <CustomerFrame lang={lang} onLangChange={setLang}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 'var(--sp4)' }}>
+          <div style={{ fontSize: 56, lineHeight: 1 }}>🕐</div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--n900)' }}>
+            {lang === 'ko' ? '현재 접수 중이 아닙니다.' : 'Registration is not open.'}
+          </h1>
+          <p style={{ fontSize: '0.9375rem', color: 'var(--n500)', lineHeight: 1.75, maxWidth: 280 }}>
+            {lang === 'ko' ? '점포의 QR코드를 다시 스캔해주세요.' : 'Please scan the QR code at the store.'}
+          </p>
+        </div>
+      </CustomerFrame>
+    )
   }
 
   if (blocked === 'full') {
