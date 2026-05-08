@@ -28,18 +28,21 @@ export interface QueueStatus {
   called_count: number
   max_count: number
   is_full: boolean
+  is_open: boolean
 }
 
 export interface QueueSettings {
   max_count: number
+  is_open: boolean
+  registration_token: string
 }
 
 export const api = {
   getQueueStatus: ()                          => request<QueueStatus>('/queue/status/'),
-  register:       (name: string, phone: string, pushSub?: object | null) =>
+  register: (name: string, phone: string, pushSub?: object | null, token?: string) =>
     request<Customer>('/register/', {
       method: 'POST',
-      body: JSON.stringify({ name, phone, push_subscription: pushSub ?? null }),
+      body: JSON.stringify({ name, phone, push_subscription: pushSub ?? null, token: token ?? '' }),
     }),
   getCustomer:       (number: number)          => request<Customer>(`/customer/${number}/`),
   saveSubscription:  (number: number, sub: object) =>
@@ -55,5 +58,7 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ max_count: maxCount }),
     }),
+  openRegistration:  () => request<QueueSettings>('/admin/open/',  { method: 'POST' }),
+  closeRegistration: () => request<QueueSettings>('/admin/close/', { method: 'POST' }),
   reset: () => request('/admin/reset/', { method: 'POST' }),
 }

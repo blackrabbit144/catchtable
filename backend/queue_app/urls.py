@@ -13,5 +13,7 @@ urlpatterns = [
     path('admin/customers/',      views.admin_customers, name='admin-customers'),
     path('admin/call/',           views.admin_call,      name='admin-call'),
     path('admin/settings/',       views.admin_settings,  name='admin-settings'),
+    path('admin/open/',           views.admin_open,      name='admin-open'),
+    path('admin/close/',          views.admin_close,     name='admin-close'),
     path('admin/reset/',          views.admin_reset,     name='admin-reset'),
 ]

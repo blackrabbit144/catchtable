@@ -1,4 +1,5 @@
 import json
+import secrets
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
@@ -45,6 +46,7 @@ def queue_status(request):
         'called_count':  called_count,
         'max_count':     qs.max_count,
         'is_full':       waiting_count >= qs.max_count,
+        'is_open':       qs.is_open,
     }
     return Response(QueueStatusSerializer(data).data)
 
@@ -57,6 +59,16 @@ def register(request):
         return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
     qs = _get_settings()
+
+    # 受付中チェック
+    if not qs.is_open:
+        return Response({'detail': 'closed'}, status=status.HTTP_403_FORBIDDEN)
+
+    # トークン検証
+    if ser.validated_data['token'] != qs.registration_token:
+        return Response({'detail': 'invalid token'}, status=status.HTTP_403_FORBIDDEN)
+
+    # 上限チェック
     waiting_count = Customer.objects.filter(status=Customer.STATUS_WAITING).count()
     if waiting_count >= qs.max_count:
         return Response({'detail': 'full'}, status=status.HTTP_409_CONFLICT)
@@ -120,6 +132,26 @@ def admin_settings(request):
         return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
     ser.save()
     return Response(ser.data)
+
+
+# ── 관리자: 수신 시작 ──
+@api_view(['POST'])
+def admin_open(request):
+    qs = _get_settings()
+    qs.is_open = True
+    qs.registration_token = secrets.token_urlsafe(32)
+    qs.save()
+    return Response(QueueSettingsSerializer(qs).data)
+
+
+# ── 관리자: 수신 종료 ──
+@api_view(['POST'])
+def admin_close(request):
+    qs = _get_settings()
+    qs.is_open = False
+    qs.registration_token = ''
+    qs.save()
+    return Response(QueueSettingsSerializer(qs).data)
 
 
 # ── 고객: Push Subscription 저장 ──

@@ -15,6 +15,7 @@ class RegisterSerializer(serializers.Serializer):
     name              = serializers.CharField(max_length=100)
     phone             = serializers.CharField(max_length=20)
     push_subscription = serializers.JSONField(required=False, allow_null=True)
+    token             = serializers.CharField(max_length=64)
 
 
 class QueueStatusSerializer(serializers.Serializer):
@@ -22,9 +23,11 @@ class QueueStatusSerializer(serializers.Serializer):
     called_count  = serializers.IntegerField()
     max_count     = serializers.IntegerField()
     is_full       = serializers.BooleanField()
+    is_open       = serializers.BooleanField()
 
 
 class QueueSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model  = QueueSettings
-        fields = ['max_count']
+        fields = ['max_count', 'is_open', 'registration_token']
+        read_only_fields = ['registration_token']

@@ -2,8 +2,10 @@ from django.db import models
 
 
 class QueueSettings(models.Model):
-    max_count = models.IntegerField(default=100)
-    updated_at = models.DateTimeField(auto_now=True)
+    max_count          = models.IntegerField(default=100)
+    is_open            = models.BooleanField(default=False)
+    registration_token = models.CharField(max_length=64, blank=True, default='')
+    updated_at         = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = '대기 설정'
