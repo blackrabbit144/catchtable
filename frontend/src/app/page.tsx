@@ -45,11 +45,17 @@ function RegisterForm() {
     try {
       const deviceId = getOrCreateDeviceId()
       const customer = await api.register(name.trim(), phone.trim(), deviceId, undefined, token)
-      localStorage.setItem('my_queue_number', String(customer.number))
       if (customer.already_registered) {
-        setError('이미 등록된 번호입니다. 잠시 후 대기 화면으로 이동합니다.')
-        setTimeout(() => router.push(`/wait/${customer.number}`), 2500)
+        if (customer.status === 'called') {
+          setError('이미 호출된 고객님입니다. 잠시 후 이동합니다.')
+          setTimeout(() => router.replace(`/called/${customer.number}`), 2500)
+        } else {
+          localStorage.setItem('my_queue_number', String(customer.number))
+          setError('이미 등록된 번호입니다. 잠시 후 대기 화면으로 이동합니다.')
+          setTimeout(() => router.push(`/wait/${customer.number}`), 2500)
+        }
       } else {
+        localStorage.setItem('my_queue_number', String(customer.number))
         router.push(`/wait/${customer.number}`)
       }
     } catch (err: unknown) {
