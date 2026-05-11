@@ -10,6 +10,7 @@ export default function AdminPage() {
   const [maxInput, setMaxInput]     = useState('100')
   const [loading, setLoading]       = useState(false)
   const [search, setSearch]         = useState('')
+  const [qrModal, setQrModal]       = useState(false)
 
   const q = search.trim().toLowerCase()
   const match = (c: Customer) =>
@@ -126,11 +127,14 @@ export default function AdminPage() {
             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--n500)' }}>QR 코드</p>
             {isOpen && qrUrl ? (
               <>
-                <div style={{ background: 'white', padding: 12, borderRadius: 'var(--r-sm)' }}>
+                <div
+                  onClick={() => setQrModal(true)}
+                  style={{ background: 'white', padding: 12, borderRadius: 'var(--r-sm)', cursor: 'pointer' }}
+                >
                   <QRCodeSVG value={qrUrl} size={120} />
                 </div>
                 <p style={{ fontSize: 10, color: 'var(--n400)', textAlign: 'center', maxWidth: 140, wordBreak: 'break-all' }}>
-                  접수 시작 시마다 갱신됩니다
+                  탭하면 크게 볼 수 있습니다
                 </p>
               </>
             ) : (
@@ -237,5 +241,25 @@ export default function AdminPage() {
 
       </div>
     </div>
+
+    {/* QRコードモーダル */}
+    {qrModal && qrUrl && (
+      <div
+        onClick={() => setQrModal(false)}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.85)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 24,
+        }}
+      >
+        <div style={{ background: 'white', padding: 24, borderRadius: 16 }}>
+          <QRCodeSVG value={qrUrl} size={280} />
+        </div>
+        <p style={{ color: 'white', fontSize: '0.9375rem', opacity: 0.7 }}>
+          탭하면 닫힙니다
+        </p>
+      </div>
+    )}
   )
 }
