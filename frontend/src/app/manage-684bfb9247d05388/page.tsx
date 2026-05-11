@@ -42,11 +42,13 @@ export default function AdminPage() {
   }, [refresh])
 
   async function handleOpen() {
+    if (!confirm('접수를 시작합니다.\n현재 등록된 모든 고객 데이터가 삭제됩니다.\n계속하시겠습니까?')) return
     const s = await api.openRegistration()
     setSettings(s)
   }
 
   async function handleClose() {
+    if (!confirm('접수를 종료합니다.\n종료 후에는 새로운 고객이 등록할 수 없습니다.\n계속하시겠습니까?')) return
     const s = await api.closeRegistration()
     setSettings(s)
   }
