@@ -14,8 +14,22 @@ export default function WaitPage({ params }: Props) {
   const { id } = use(params)
   const customerNumber = parseInt(id)
 
-  const [lang, setLang]         = useState<Lang>('ko')
-  const [position, setPosition] = useState<number | null>(null)
+  const [lang, setLang]             = useState<Lang>('ko')
+  const [position, setPosition]     = useState<number | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+
+  async function handleCancel() {
+    const msg = lang === 'ko'
+      ? '등록을 취소하시겠습니까?\n취소 후 다시 QR코드를 스캔하여 재등록할 수 있습니다.'
+      : 'Cancel your registration?\nYou can re-register by scanning the QR code again.'
+    if (!confirm(msg)) return
+    setCancelling(true)
+    try {
+      await api.cancelRegistration(customerNumber)
+    } catch { /* already deleted or called — proceed anyway */ }
+    localStorage.removeItem('my_queue_number')
+    router.replace('/')
+  }
 
   useEffect(() => {
     async function poll() {
@@ -119,6 +133,18 @@ export default function WaitPage({ params }: Props) {
             ? <>순서가 되면 알림을 보내드립니다.<br />알림을 허용해 주세요.</>
             : <>You&apos;ll be notified when it&apos;s your turn.<br />Please allow notifications.</>}
         </p>
+
+        <button
+          onClick={handleCancel}
+          disabled={cancelling}
+          style={{
+            marginTop: 'var(--sp8)', background: 'none', border: 'none',
+            fontSize: '0.8125rem', color: 'var(--n400)', cursor: 'pointer',
+            textDecoration: 'underline', fontFamily: 'inherit',
+          }}
+        >
+          {lang === 'ko' ? '등록 취소' : 'Cancel registration'}
+        </button>
       </div>
     </CustomerFrame>
   )

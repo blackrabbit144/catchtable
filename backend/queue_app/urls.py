@@ -8,6 +8,7 @@ urlpatterns = [
     path('customer/<int:number>/',views.customer_detail, name='customer-detail'),
 
     path('customer/<int:number>/subscription/', views.save_subscription, name='save-subscription'),
+    path('customer/<int:number>/cancel/',       views.customer_cancel,  name='customer-cancel'),
 
     # 관리자 API
     path('admin/customers/',      views.admin_customers, name='admin-customers'),

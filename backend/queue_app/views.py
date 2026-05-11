@@ -188,6 +188,19 @@ def admin_close(request):
     return Response(QueueSettingsSerializer(qs).data)
 
 
+# ── 고객: 등록 취소 ──
+@api_view(['DELETE'])
+def customer_cancel(request, number):
+    try:
+        customer = Customer.objects.get(number=number)
+    except Customer.DoesNotExist:
+        return Response({'detail': 'not found'}, status=status.HTTP_404_NOT_FOUND)
+    if customer.status != Customer.STATUS_WAITING:
+        return Response({'detail': 'already called'}, status=status.HTTP_400_BAD_REQUEST)
+    customer.delete()
+    return Response({'detail': 'cancelled'}, status=status.HTTP_200_OK)
+
+
 # ── 고객: Push Subscription 저장 ──
 @api_view(['POST'])
 def save_subscription(request, number):

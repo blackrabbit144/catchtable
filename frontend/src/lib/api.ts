@@ -46,6 +46,7 @@ export const api = {
       body: JSON.stringify({ name, phone, device_id: deviceId, push_subscription: pushSub ?? null, token: token ?? '' }),
     }),
   getCustomer:       (number: number)          => request<Customer>(`/customer/${number}/`),
+  cancelRegistration:(number: number)          => request(`/customer/${number}/cancel/`, { method: 'DELETE' }),
   saveSubscription:  (number: number, sub: object) =>
     request(`/customer/${number}/subscription/`, {
       method: 'POST',
