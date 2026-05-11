@@ -23,6 +23,7 @@ function RegisterForm() {
   const [lang, setLang]       = useState<Lang>('ko')
   const [name, setName]       = useState('')
   const [phone, setPhone]     = useState('')
+  const [agreed, setAgreed]   = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const [blocked, setBlocked] = useState<'closed' | 'full' | null>(null)
@@ -130,13 +131,30 @@ function RegisterForm() {
           </div>
         </div>
 
+        <label style={{
+          display: 'flex', alignItems: 'flex-start', gap: 'var(--sp3)',
+          marginBottom: 'var(--sp4)', cursor: 'pointer',
+        }}>
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={e => setAgreed(e.target.checked)}
+            style={{ marginTop: 3, flexShrink: 0, width: 16, height: 16, cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: '0.8125rem', color: 'var(--n600)', lineHeight: 1.6 }}>
+            {lang === 'ko'
+              ? <>개인정보(이름, 전화번호) 수집·이용에 동의합니다.<br />수집된 정보는 대기 접수 및 SMS 알림 발송 목적으로만 사용되며, 접수 종료 후 즉시 파기됩니다.</>
+              : <>I agree to the collection and use of personal information (name, phone number).<br />Collected information is used solely for queue registration and SMS notifications, and is deleted immediately after the session ends.</>}
+          </span>
+        </label>
+
         {error && (
           <p style={{ fontSize: '0.875rem', color: 'oklch(55% 0.18 25)', marginBottom: 'var(--sp4)' }}>
             {error}
           </p>
         )}
 
-        <button className="btnMain" type="submit" disabled={loading}>
+        <button className="btnMain" type="submit" disabled={loading || !agreed}>
           {loading ? (lang === 'ko' ? '등록 중...' : 'Registering...') : (lang === 'ko' ? '등록하기' : 'Register')}
         </button>
       </form>
