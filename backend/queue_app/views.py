@@ -92,6 +92,14 @@ def register(request):
         data['already_registered'] = True
         return Response(data, status=status.HTTP_200_OK)
 
+    # デバイスID重複チェック
+    if device_id:
+        existing_device = Customer.objects.filter(device_id=device_id).first()
+        if existing_device:
+            data = CustomerSerializer(existing_device).data
+            data['already_registered'] = True
+            return Response(data, status=status.HTTP_200_OK)
+
     # 上限チェック
     waiting_count = Customer.objects.filter(status=Customer.STATUS_WAITING).count()
     if waiting_count >= qs.max_count:
