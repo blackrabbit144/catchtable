@@ -21,6 +21,7 @@ export interface Customer {
   position: number
   registered_at: string
   called_at: string | null
+  already_registered?: boolean
 }
 
 export interface QueueStatus {
@@ -39,10 +40,10 @@ export interface QueueSettings {
 
 export const api = {
   getQueueStatus: ()                          => request<QueueStatus>('/queue/status/'),
-  register: (name: string, phone: string, pushSub?: object | null, token?: string) =>
+  register: (name: string, phone: string, deviceId: string, pushSub?: object | null, token?: string) =>
     request<Customer>('/register/', {
       method: 'POST',
-      body: JSON.stringify({ name, phone, push_subscription: pushSub ?? null, token: token ?? '' }),
+      body: JSON.stringify({ name, phone, device_id: deviceId, push_subscription: pushSub ?? null, token: token ?? '' }),
     }),
   getCustomer:       (number: number)          => request<Customer>(`/customer/${number}/`),
   saveSubscription:  (number: number, sub: object) =>

@@ -14,6 +14,7 @@ class CustomerSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.Serializer):
     name              = serializers.CharField(max_length=100)
     phone             = serializers.CharField(max_length=20)
+    device_id         = serializers.CharField(max_length=64, required=False, allow_blank=True, default='')
     push_subscription = serializers.JSONField(required=False, allow_null=True)
     token             = serializers.CharField(max_length=64)
 

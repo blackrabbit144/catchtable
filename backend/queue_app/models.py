@@ -25,6 +25,7 @@ class Customer(models.Model):
     number            = models.IntegerField(unique=True)
     name              = models.CharField(max_length=100)
     phone             = models.CharField(max_length=20)
+    device_id         = models.CharField(max_length=64, blank=True, default='')
     status            = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_WAITING)
     push_subscription = models.JSONField(null=True, blank=True)
     registered_at     = models.DateTimeField(auto_now_add=True)

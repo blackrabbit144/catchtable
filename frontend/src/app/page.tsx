@@ -5,6 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import CustomerFrame, { type Lang } from '@/components/CustomerFrame'
 import { api } from '@/lib/api'
 
+function getOrCreateDeviceId(): string {
+  const cookieMatch = document.cookie.split('; ').find(row => row.startsWith('device_id='))
+  const cookieId = cookieMatch ? cookieMatch.split('=')[1] : null
+  const localId  = localStorage.getItem('device_id')
+  const id = cookieId || localId || crypto.randomUUID()
+  localStorage.setItem('device_id', id)
+  document.cookie = `device_id=${id}; max-age=${60 * 60 * 24 * 365}; SameSite=Lax; path=/`
+  return id
+}
+
 function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -33,9 +43,15 @@ function RegisterForm() {
     setLoading(true)
     setError('')
     try {
-      const customer = await api.register(name.trim(), phone.trim(), undefined, token)
+      const deviceId = getOrCreateDeviceId()
+      const customer = await api.register(name.trim(), phone.trim(), deviceId, undefined, token)
       localStorage.setItem('my_queue_number', String(customer.number))
-      router.push(`/wait/${customer.number}`)
+      if (customer.already_registered) {
+        setError('이미 등록된 번호입니다. 잠시 후 대기 화면으로 이동합니다.')
+        setTimeout(() => router.push(`/wait/${customer.number}`), 2500)
+      } else {
+        router.push(`/wait/${customer.number}`)
+      }
     } catch (err: unknown) {
       const status = (err as { status?: number }).status
       if (status === 409) router.push('/full')

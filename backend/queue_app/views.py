@@ -82,13 +82,15 @@ def register(request):
     if ser.validated_data['token'] != qs.registration_token:
         return Response({'detail': 'invalid token'}, status=status.HTTP_403_FORBIDDEN)
 
-    # 重複チェック
-    existing = Customer.objects.filter(
-        phone=ser.validated_data['phone'],
-        status=Customer.STATUS_WAITING
-    ).first()
+    phone     = ser.validated_data['phone']
+    device_id = ser.validated_data.get('device_id', '')
+
+    # 電話番号重複チェック（ステータス問わず）
+    existing = Customer.objects.filter(phone=phone).first()
     if existing:
-        return Response(CustomerSerializer(existing).data, status=status.HTTP_200_OK)
+        data = CustomerSerializer(existing).data
+        data['already_registered'] = True
+        return Response(data, status=status.HTTP_200_OK)
 
     # 上限チェック
     waiting_count = Customer.objects.filter(status=Customer.STATUS_WAITING).count()
@@ -101,7 +103,8 @@ def register(request):
     customer = Customer.objects.create(
         number=number,
         name=ser.validated_data['name'],
-        phone=ser.validated_data['phone'],
+        phone=phone,
+        device_id=device_id,
         push_subscription=ser.validated_data.get('push_subscription'),
     )
     return Response(CustomerSerializer(customer).data, status=status.HTTP_201_CREATED)
