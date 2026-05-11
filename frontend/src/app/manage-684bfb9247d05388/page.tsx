@@ -71,6 +71,7 @@ export default function AdminPage() {
   const isOpen = settings?.is_open ?? false
 
   return (
+    <>
     <div className="adminWrap">
       <header className="adminHeader">
         <div className="adminHeaderTitle">관리자 대시보드</div>
@@ -261,5 +262,6 @@ export default function AdminPage() {
         </p>
       </div>
     )}
+    </>
   )
 }
