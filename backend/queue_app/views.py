@@ -139,7 +139,7 @@ def admin_customers(request):
 @api_view(['POST'])
 def admin_call(request):
     waiting = Customer.objects.filter(status=Customer.STATUS_WAITING).order_by('number')
-    batch = list(waiting[:5])
+    batch = list(waiting[:1])
     if not batch:
         return Response({'detail': 'no waiting customers'}, status=status.HTTP_400_BAD_REQUEST)
 

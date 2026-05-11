@@ -19,7 +19,7 @@ export default function AdminPage() {
   const called  = customers.filter(c => c.status === 'called'  && (q === '' || match(c)))
   const waitingTotal = customers.filter(c => c.status === 'waiting').length
   const calledTotal  = customers.filter(c => c.status === 'called').length
-  const callBatch   = Math.min(5, waitingTotal)
+  const callBatch   = Math.min(1, waitingTotal)
   const maxCount    = settings?.max_count ?? 100
   const progressPct = Math.round((waitingTotal / maxCount) * 100)
 
