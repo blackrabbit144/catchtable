@@ -73,7 +73,7 @@ export default function WaitPage({ params }: Props) {
 
     setupPush()
     poll()
-    const timer = setInterval(poll, 5000)
+    const timer = setInterval(poll, 10000)
     return () => clearInterval(timer)
   }, [customerNumber, router])
 
