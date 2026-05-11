@@ -9,12 +9,19 @@ export default function AdminPage() {
   const [settings, setSettings]     = useState<QueueSettings | null>(null)
   const [maxInput, setMaxInput]     = useState('100')
   const [loading, setLoading]       = useState(false)
+  const [search, setSearch]         = useState('')
 
-  const waiting = customers.filter(c => c.status === 'waiting')
-  const called  = customers.filter(c => c.status === 'called')
-  const callBatch   = Math.min(5, waiting.length)
+  const q = search.trim().toLowerCase()
+  const match = (c: Customer) =>
+    c.name.toLowerCase().includes(q) || c.phone.includes(q)
+
+  const waiting = customers.filter(c => c.status === 'waiting' && (q === '' || match(c)))
+  const called  = customers.filter(c => c.status === 'called'  && (q === '' || match(c)))
+  const waitingTotal = customers.filter(c => c.status === 'waiting').length
+  const calledTotal  = customers.filter(c => c.status === 'called').length
+  const callBatch   = Math.min(5, waitingTotal)
   const maxCount    = settings?.max_count ?? 100
-  const progressPct = Math.round((waiting.length / maxCount) * 100)
+  const progressPct = Math.round((waitingTotal / maxCount) * 100)
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const qrUrl   = settings?.registration_token
@@ -141,7 +148,7 @@ export default function AdminPage() {
         <div className="adminStats">
           <div className="statCard">
             <div className="statLabel">현재 대기</div>
-            <div className="statVal">{waiting.length}<span> 명</span></div>
+            <div className="statVal">{waitingTotal}<span> 명</span></div>
             <div className="statMax">최대 {maxCount}명</div>
             <div className="progressBar">
               <div className="progressFill" style={{ width: `${progressPct}%` }} />
@@ -149,7 +156,7 @@ export default function AdminPage() {
           </div>
           <div className="statCard">
             <div className="statLabel">호출 완료</div>
-            <div className="statVal">{called.length}<span> 명</span></div>
+            <div className="statVal">{calledTotal}<span> 명</span></div>
           </div>
         </div>
 
@@ -163,15 +170,32 @@ export default function AdminPage() {
         </div>
 
         {/* Call button */}
-        <button className="btnCall" onClick={handleCall} disabled={waiting.length === 0 || loading}>
-          {loading ? '호출 중...' : waiting.length === 0 ? '대기 인원 없음' : `${callBatch}명 호출하기`}
+        <button className="btnCall" onClick={handleCall} disabled={waitingTotal === 0 || loading}>
+          {loading ? '호출 중...' : waitingTotal === 0 ? '대기 인원 없음' : `${callBatch}명 호출하기`}
         </button>
+
+        {/* Search */}
+        <input
+          type="search"
+          placeholder="이름 또는 전화번호로 검색"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '10px var(--sp4)', border: '1.5px solid var(--n200)',
+            borderRadius: 'var(--r-sm)', fontFamily: 'inherit',
+            fontSize: '0.9375rem', color: 'var(--n900)',
+            outline: 'none', background: 'var(--n0)',
+          }}
+        />
 
         {/* Waiting list */}
         <div className="listSection">
           <div className="listHeader">
             <span className="listHeaderTitle">대기 중</span>
-            <span className="listBadge listBadgeW">{waiting.length}명</span>
+            <span className="listBadge listBadgeW">
+              {q ? `${waiting.length} / ${waitingTotal}명` : `${waitingTotal}명`}
+            </span>
           </div>
           {waiting.length === 0 ? (
             <div style={{ padding: 'var(--sp8)', textAlign: 'center', color: 'var(--n400)', fontSize: '0.875rem' }}>
@@ -191,7 +215,9 @@ export default function AdminPage() {
         <div className="listSection">
           <div className="listHeader">
             <span className="listHeaderTitle">호출 완료</span>
-            <span className="listBadge listBadgeD">{called.length}명</span>
+            <span className="listBadge listBadgeD">
+              {q ? `${called.length} / ${calledTotal}명` : `${calledTotal}명`}
+            </span>
           </div>
           {called.length === 0 ? (
             <div style={{ padding: 'var(--sp8)', textAlign: 'center', color: 'var(--n400)', fontSize: '0.875rem' }}>
