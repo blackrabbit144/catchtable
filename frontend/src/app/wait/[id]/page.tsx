@@ -27,8 +27,11 @@ export default function WaitPage({ params }: Props) {
           return
         }
         setPosition(data.position)
-      } catch {
-        // サーバー一時エラーは無視して次のポーリングに任せる
+      } catch (err: unknown) {
+        if ((err as { status?: number }).status === 404) {
+          localStorage.removeItem('my_queue_number')
+          router.replace('/')
+        }
       }
     }
 
