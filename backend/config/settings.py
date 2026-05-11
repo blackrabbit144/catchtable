@@ -78,10 +78,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
 }
 
-# ── Web Push (VAPID) ──
-VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
-VAPID_PUBLIC_KEY  = os.environ.get('VAPID_PUBLIC_KEY',  '')
-VAPID_CLAIM_EMAIL = os.environ.get('VAPID_CLAIM_EMAIL', 'admin@example.com')
+# ── Solapi SMS ──
+SOLAPI_API_KEY    = os.environ.get('SOLAPI_API_KEY', '')
+SOLAPI_API_SECRET = os.environ.get('SOLAPI_API_SECRET', '')
+SOLAPI_SENDER     = os.environ.get('SOLAPI_SENDER', '')
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

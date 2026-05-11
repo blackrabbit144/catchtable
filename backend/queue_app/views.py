@@ -1,12 +1,13 @@
-import json
+import hashlib
+import hmac
 import secrets
+import time
+import requests
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from py_vapid import Vapid
-from pywebpush import webpush, WebPushException
 
 from .models import Customer, QueueSettings
 from .serializers import (
@@ -20,18 +21,31 @@ def _get_settings() -> QueueSettings:
     return obj
 
 
-def _send_push(subscription: dict, number: int) -> None:
-    if not subscription or not settings.VAPID_PRIVATE_KEY:
+def _send_sms(phone: str, number: int) -> None:
+    api_key = settings.SOLAPI_API_KEY
+    api_secret = settings.SOLAPI_API_SECRET
+    sender = settings.SOLAPI_SENDER
+    if not api_key or not api_secret or not sender:
         return
     try:
-        vapid = Vapid.from_string(settings.VAPID_PRIVATE_KEY)
-        webpush(
-            subscription_info=subscription,
-            data=json.dumps({'number': number}),
-            vapid_private_key=vapid,
-            vapid_claims={'sub': f'mailto:{settings.VAPID_CLAIM_EMAIL}'},
-        )
-    except WebPushException:
+        date = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        salt = secrets.token_hex(16)
+        signature = hmac.new(
+            api_secret.encode(), f'{date}{salt}'.encode(), hashlib.sha256
+        ).hexdigest()
+        headers = {
+            'Authorization': f'HMAC-SHA256 apiKey={api_key}, date={date}, salt={salt}, signature={signature}',
+            'Content-Type': 'application/json',
+        }
+        body = {
+            'message': {
+                'to': phone,
+                'from': sender,
+                'text': f'[포켓몬카드샵] #{number}번 고객님, 입장해 주세요.',
+            }
+        }
+        requests.post('https://api.solapi.com/messages/v4/send', json=body, headers=headers, timeout=5)
+    except Exception:
         pass
 
 
@@ -123,7 +137,7 @@ def admin_call(request):
         customer.status    = Customer.STATUS_CALLED
         customer.called_at = now
         customer.save()
-        _send_push(customer.push_subscription, customer.number)
+        _send_sms(customer.phone, customer.number)
 
     return Response(CustomerSerializer(batch, many=True).data)
 
