@@ -11,6 +11,8 @@ export default function AdminPage() {
   const [loading, setLoading]       = useState(false)
   const [search, setSearch]         = useState('')
   const [qrModal, setQrModal]       = useState(false)
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [gpsMsg, setGpsMsg]         = useState('')
 
   const q = search.trim().toLowerCase()
   const match = (c: Customer) =>
@@ -66,6 +68,42 @@ export default function AdminPage() {
     if (isNaN(val) || val < 1) return
     const s = await api.updateSettings(val)
     setSettings(s)
+  }
+
+  async function handleGpsToggle() {
+    if (!settings) return
+    const newEnabled = !settings.gps_enabled
+    const s = await api.updateGpsSettings(newEnabled, settings.latitude, settings.longitude)
+    setSettings(s)
+    setGpsMsg(newEnabled ? 'GPS認証をONにしました' : 'GPS認証をOFFにしました')
+    setTimeout(() => setGpsMsg(''), 3000)
+  }
+
+  async function handleSetLocation() {
+    if (!navigator.geolocation) {
+      setGpsMsg('このブラウザはGPSに対応していません')
+      return
+    }
+    setGpsLoading(true)
+    setGpsMsg('')
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const s = await api.updateGpsSettings(
+          settings?.gps_enabled ?? false,
+          pos.coords.latitude,
+          pos.coords.longitude
+        )
+        setSettings(s)
+        setGpsLoading(false)
+        setGpsMsg(`📍 位置情報を設定しました (${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)})`)
+        setTimeout(() => setGpsMsg(''), 5000)
+      },
+      () => {
+        setGpsLoading(false)
+        setGpsMsg('位置情報の取得に失敗しました。ブラウザの設定を確認してください。')
+      },
+      { timeout: 10000 }
+    )
   }
 
   const isOpen = settings?.is_open ?? false
@@ -165,6 +203,46 @@ export default function AdminPage() {
             <div className="statLabel">호출 완료</div>
             <div className="statVal">{calledTotal}<span> 명</span></div>
           </div>
+        </div>
+
+        {/* GPS設定 */}
+        <div style={{ background: 'var(--n0)', borderRadius: 'var(--r-md)', padding: 'var(--sp6)', display: 'flex', flexDirection: 'column', gap: 'var(--sp3)' }}>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--n500)', margin: 0 }}>GPS 위치 인증</p>
+          <div style={{ display: 'flex', gap: 'var(--sp2)', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleGpsToggle}
+              style={{
+                padding: '8px 16px', border: 'none', borderRadius: 'var(--r-sm)',
+                fontFamily: 'inherit', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
+                background: settings?.gps_enabled ? 'var(--y300)' : 'var(--n200)',
+                color: settings?.gps_enabled ? 'var(--n900)' : 'var(--n600)',
+              }}
+            >
+              {settings?.gps_enabled ? 'GPS ON' : 'GPS OFF'}
+            </button>
+            <button
+              onClick={handleSetLocation}
+              disabled={gpsLoading}
+              style={{
+                padding: '8px 16px', border: 'none', borderRadius: 'var(--r-sm)',
+                fontFamily: 'inherit', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
+                background: 'var(--b100)', color: 'var(--b600)',
+              }}
+            >
+              {gpsLoading ? '취득 중...' : '📍 현재 위치 설정'}
+            </button>
+          </div>
+          {settings?.latitude && settings?.longitude && (
+            <p style={{ fontSize: '0.75rem', color: 'var(--n400)', margin: 0 }}>
+              설정된 위치: {settings.latitude.toFixed(5)}, {settings.longitude.toFixed(5)}
+            </p>
+          )}
+          {!settings?.latitude && (
+            <p style={{ fontSize: '0.75rem', color: 'var(--n400)', margin: 0 }}>위치 정보 미설정</p>
+          )}
+          {gpsMsg && (
+            <p style={{ fontSize: '0.8125rem', color: 'var(--b500)', margin: 0 }}>{gpsMsg}</p>
+          )}
         </div>
 
         {/* Settings */}

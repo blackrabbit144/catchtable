@@ -17,6 +17,8 @@ class RegisterSerializer(serializers.Serializer):
     device_id         = serializers.CharField(max_length=64, required=False, allow_blank=True, default='')
     push_subscription = serializers.JSONField(required=False, allow_null=True)
     token             = serializers.CharField(max_length=64)
+    latitude          = serializers.FloatField(required=False, allow_null=True)
+    longitude         = serializers.FloatField(required=False, allow_null=True)
 
 
 class QueueStatusSerializer(serializers.Serializer):
@@ -30,5 +32,5 @@ class QueueStatusSerializer(serializers.Serializer):
 class QueueSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model  = QueueSettings
-        fields = ['max_count', 'is_open', 'registration_token']
+        fields = ['max_count', 'is_open', 'registration_token', 'gps_enabled', 'latitude', 'longitude']
         read_only_fields = ['registration_token']

@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import math
 import secrets
 import time
 import requests
@@ -17,9 +18,19 @@ from .serializers import (
 )
 
 
+GPS_RADIUS_METERS = 200
+
 def _get_settings() -> QueueSettings:
     obj, _ = QueueSettings.objects.get_or_create(pk=1)
     return obj
+
+def _haversine(lat1, lon1, lat2, lon2) -> float:
+    R = 6371000  # 地球の半径（メートル）
+    p = math.pi / 180
+    a = (math.sin((lat2 - lat1) * p / 2) ** 2 +
+         math.cos(lat1 * p) * math.cos(lat2 * p) *
+         math.sin((lon2 - lon1) * p / 2) ** 2)
+    return 2 * R * math.asin(math.sqrt(a))
 
 
 def _send_sms(phone: str, number: int) -> None:
@@ -84,6 +95,18 @@ def register(request):
     # トークン検証
     if ser.validated_data['token'] != qs.registration_token:
         return Response({'detail': 'invalid token'}, status=status.HTTP_403_FORBIDDEN)
+
+    # GPS検証
+    if qs.gps_enabled:
+        if qs.latitude is None or qs.longitude is None:
+            return Response({'detail': 'gps_not_configured'}, status=status.HTTP_403_FORBIDDEN)
+        user_lat = ser.validated_data.get('latitude')
+        user_lon = ser.validated_data.get('longitude')
+        if user_lat is None or user_lon is None:
+            return Response({'detail': 'location_required'}, status=status.HTTP_403_FORBIDDEN)
+        distance = _haversine(qs.latitude, qs.longitude, user_lat, user_lon)
+        if distance > GPS_RADIUS_METERS:
+            return Response({'detail': 'too_far'}, status=status.HTTP_403_FORBIDDEN)
 
     phone     = ser.validated_data['phone']
     device_id = ser.validated_data.get('device_id', '')

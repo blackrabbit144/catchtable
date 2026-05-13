@@ -39,14 +39,17 @@ export interface QueueSettings {
   max_count: number
   is_open: boolean
   registration_token: string
+  gps_enabled: boolean
+  latitude: number | null
+  longitude: number | null
 }
 
 export const api = {
   getQueueStatus: ()                          => request<QueueStatus>('/queue/status/'),
-  register: (name: string, phone: string, deviceId: string, pushSub?: object | null, token?: string) =>
+  register: (name: string, phone: string, deviceId: string, pushSub?: object | null, token?: string, coords?: { latitude: number, longitude: number } | null) =>
     request<Customer>('/register/', {
       method: 'POST',
-      body: JSON.stringify({ name, phone, device_id: deviceId, push_subscription: pushSub ?? null, token: token ?? '' }),
+      body: JSON.stringify({ name, phone, device_id: deviceId, push_subscription: pushSub ?? null, token: token ?? '', latitude: coords?.latitude ?? null, longitude: coords?.longitude ?? null }),
     }),
   getCustomer:       (number: number)          => request<Customer>(`/customer/${number}/`),
   cancelRegistration:(number: number)          => request(`/customer/${number}/cancel/`, { method: 'DELETE' }),
@@ -66,4 +69,9 @@ export const api = {
   openRegistration:  () => request<QueueSettings>('/admin/open/',  { method: 'POST' }),
   closeRegistration: () => request<QueueSettings>('/admin/close/', { method: 'POST' }),
   reset: () => request('/admin/reset/', { method: 'POST' }),
+  updateGpsSettings: (gpsEnabled: boolean, latitude: number | null, longitude: number | null) =>
+    request<QueueSettings>('/admin/settings/', {
+      method: 'PUT',
+      body: JSON.stringify({ gps_enabled: gpsEnabled, latitude, longitude }),
+    }),
 }
