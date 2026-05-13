@@ -75,6 +75,7 @@ def queue_status(request):
         'max_count':     qs.max_count,
         'is_full':       waiting_count >= qs.max_count,
         'is_open':       qs.is_open,
+        'gps_enabled':   qs.gps_enabled,
     }
     return Response(QueueStatusSerializer(data).data)
 

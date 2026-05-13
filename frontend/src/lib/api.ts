@@ -33,6 +33,7 @@ export interface QueueStatus {
   max_count: number
   is_full: boolean
   is_open: boolean
+  gps_enabled: boolean
 }
 
 export interface QueueSettings {

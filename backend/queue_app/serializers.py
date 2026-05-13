@@ -27,6 +27,7 @@ class QueueStatusSerializer(serializers.Serializer):
     max_count     = serializers.IntegerField()
     is_full       = serializers.BooleanField()
     is_open       = serializers.BooleanField()
+    gps_enabled   = serializers.BooleanField()
 
 
 class QueueSettingsSerializer(serializers.ModelSerializer):

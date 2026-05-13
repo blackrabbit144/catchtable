@@ -58,7 +58,7 @@ function RegisterForm() {
       const deviceId = getOrCreateDeviceId()
 
       // GPS検証が有効な場合のみ位置情報を取得
-      const queueStatus = await api.getSettings().catch(() => null)
+      const queueStatus = await api.getQueueStatus().catch(() => null)
       let coords: { latitude: number, longitude: number } | null = null
       if (queueStatus?.gps_enabled) {
         coords = await getGpsCoords()
