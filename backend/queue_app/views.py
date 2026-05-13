@@ -44,7 +44,7 @@ def _send_sms(phone: str, number: int) -> None:
             'message': {
                 'to': phone,
                 'from': sender,
-                'text': f'[포켓몬카드샵] #{number}번 고객님, 입장해 주세요.\n추가 문의가 있으실 경우, 이 번호로 연락하셔도 대응하지 않습니다. 추가문의는 아래 번호로 연락주세요.\n050714919697',
+                'text': f'[포켓몬카드샵] #{number}번 고객님, 입장해 주세요.',
             }
         }
         requests.post('https://api.solapi.com/messages/v4/send', json=body, headers=headers, timeout=5)
