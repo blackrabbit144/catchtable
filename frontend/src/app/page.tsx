@@ -38,17 +38,6 @@ function RegisterForm() {
     }).catch(() => {})
   }, [token, router])
 
-  async function getGpsCoords(): Promise<{ latitude: number, longitude: number } | null> {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) { resolve(null); return }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-        () => resolve(null),
-        { timeout: 8000, maximumAge: 30000 }
-      )
-    })
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim() || !phone.trim()) return
@@ -56,22 +45,7 @@ function RegisterForm() {
     setError('')
     try {
       const deviceId = getOrCreateDeviceId()
-
-      // GPS検証が有効な場合のみ位置情報を取得
-      const queueStatus = await api.getQueueStatus().catch(() => null)
-      let coords: { latitude: number, longitude: number } | null = null
-      if (queueStatus?.gps_enabled) {
-        coords = await getGpsCoords()
-        if (!coords) {
-          setError(lang === 'ko'
-            ? '위치 정보 접근이 거부되었습니다. 브라우저 설정에서 위치 정보를 허용해 주세요.'
-            : 'Location access denied. Please allow location access in your browser settings.')
-          setLoading(false)
-          return
-        }
-      }
-
-      const customer = await api.register(name.trim(), phone.trim(), deviceId, undefined, token, coords)
+      const customer = await api.register(name.trim(), phone.trim(), deviceId, undefined, token)
       if (customer.already_registered) {
         if (customer.status === 'called') {
           setError('이미 호출된 고객님입니다. 잠시 후 이동합니다.')
@@ -89,14 +63,6 @@ function RegisterForm() {
       const status = (err as { status?: number }).status
       const detail = (err as { message?: string }).message
       if (status === 409) router.push('/full')
-      else if (status === 403 && detail === 'too_far')
-        setError(lang === 'ko'
-          ? '매장 근처에서만 등록할 수 있습니다. 매장에 오신 후 다시 시도해 주세요.'
-          : 'You must be near the store to register. Please try again from the store.')
-      else if (status === 403 && detail === 'location_required')
-        setError(lang === 'ko'
-          ? '위치 정보가 필요합니다. 브라우저 설정에서 위치 정보를 허용해 주세요.'
-          : 'Location access is required. Please allow location access in your browser settings.')
       else if (status === 403) setBlocked('closed')
       else setError(lang === 'ko' ? '오류가 발생했습니다. 다시 시도해주세요.' : 'An error occurred. Please try again.')
     } finally {

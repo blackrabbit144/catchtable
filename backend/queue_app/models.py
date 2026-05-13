@@ -6,9 +6,6 @@ class QueueSettings(models.Model):
     is_open            = models.BooleanField(default=False)
     registration_token = models.CharField(max_length=64, blank=True, default='')
     updated_at         = models.DateTimeField(auto_now=True)
-    gps_enabled        = models.BooleanField(default=False)
-    latitude           = models.FloatField(null=True, blank=True)
-    longitude          = models.FloatField(null=True, blank=True)
 
     class Meta:
         verbose_name = '대기 설정'
