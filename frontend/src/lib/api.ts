@@ -1,10 +1,13 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10000)
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    signal: controller.signal,
     ...options,
-  })
+  }).finally(() => clearTimeout(timer))
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw Object.assign(new Error(err.detail ?? 'API error'), { status: res.status })
