@@ -82,6 +82,7 @@ REST_FRAMEWORK = {
 SOLAPI_API_KEY    = os.environ.get('SOLAPI_API_KEY', '')
 SOLAPI_API_SECRET = os.environ.get('SOLAPI_API_SECRET', '')
 SOLAPI_SENDER     = os.environ.get('SOLAPI_SENDER', '')
+LOAD_TEST_MODE    = os.environ.get('LOAD_TEST_MODE', 'False') == 'True'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

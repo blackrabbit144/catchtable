@@ -4,6 +4,7 @@ import secrets
 import time
 import requests
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -22,6 +23,8 @@ def _get_settings() -> QueueSettings:
 
 
 def _send_sms(phone: str, number: int) -> None:
+    if getattr(settings, 'LOAD_TEST_MODE', False):
+        return
     api_key = settings.SOLAPI_API_KEY
     api_secret = settings.SOLAPI_API_SECRET
     sender = settings.SOLAPI_SENDER
@@ -100,21 +103,24 @@ def register(request):
             data['already_registered'] = True
             return Response(data, status=status.HTTP_200_OK)
 
-    # 上限チェック
-    waiting_count = Customer.objects.filter(status=Customer.STATUS_WAITING).count()
-    if waiting_count >= qs.max_count:
-        return Response({'detail': 'full'}, status=status.HTTP_409_CONFLICT)
+    with transaction.atomic():
+        # QueueSettingsをロックして採番をシリアライズ
+        qs = QueueSettings.objects.select_for_update().get(pk=1)
 
-    last = Customer.objects.order_by('-number').first()
-    number = (last.number + 1) if last else 1
+        waiting_count = Customer.objects.filter(status=Customer.STATUS_WAITING).count()
+        if waiting_count >= qs.max_count:
+            return Response({'detail': 'full'}, status=status.HTTP_409_CONFLICT)
 
-    customer = Customer.objects.create(
-        number=number,
-        name=ser.validated_data['name'],
-        phone=phone,
-        device_id=device_id,
-        push_subscription=ser.validated_data.get('push_subscription'),
-    )
+        last = Customer.objects.order_by('-number').first()
+        number = (last.number + 1) if last else 1
+
+        customer = Customer.objects.create(
+            number=number,
+            name=ser.validated_data['name'],
+            phone=phone,
+            device_id=device_id,
+            push_subscription=ser.validated_data.get('push_subscription'),
+        )
     return Response(CustomerSerializer(customer).data, status=status.HTTP_201_CREATED)
 
 
