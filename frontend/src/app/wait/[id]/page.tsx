@@ -16,7 +16,10 @@ export default function WaitPage({ params }: Props) {
 
   const [lang, setLang]             = useState<Lang>('ko')
   const [position, setPosition]     = useState<number | null>(null)
+  const [registeredAt, setRegisteredAt] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState(false)
+
+  const MINUTES_PER_PERSON = 5
 
   async function handleCancel() {
     const msg = lang === 'ko'
@@ -41,6 +44,7 @@ export default function WaitPage({ params }: Props) {
           return
         }
         setPosition(data.position)
+        setRegisteredAt(prev => prev ?? data.registered_at)
       } catch (err: unknown) {
         if ((err as { status?: number }).status === 404) {
           localStorage.removeItem('my_queue_number')
@@ -108,7 +112,7 @@ export default function WaitPage({ params }: Props) {
           background: 'var(--b50)',
           borderRadius: 'var(--r-md)',
           padding: 'var(--sp6) var(--sp8)',
-          marginBottom: 'var(--sp6)',
+          marginBottom: 'var(--sp4)',
         }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--b400)', marginBottom: 'var(--sp2)' }}>
             {lang === 'ko' ? '현재 대기 순번' : 'Current Position'}
@@ -127,6 +131,71 @@ export default function WaitPage({ params }: Props) {
             )}
           </div>
         </div>
+
+        <div style={{
+          width: '100%',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 'var(--sp3)',
+          marginBottom: 'var(--sp6)',
+        }}>
+          <div style={{
+            background: 'var(--n50)',
+            borderRadius: 'var(--r-md)',
+            padding: 'var(--sp4) var(--sp4)',
+            textAlign: 'center',
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--n400)', marginBottom: 'var(--sp1)' }}>
+              {lang === 'ko' ? '내 앞 대기' : 'Ahead of you'}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
+              <span style={{
+                fontSize: '1.8rem', fontWeight: 900, color: 'var(--n600)',
+                lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+              }}>
+                {position !== null ? position - 1 : '—'}
+              </span>
+              {position !== null && (
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--n400)' }}>
+                  {lang === 'ko' ? '명' : 'ppl'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div style={{
+            background: 'var(--n50)',
+            borderRadius: 'var(--r-md)',
+            padding: 'var(--sp4) var(--sp4)',
+            textAlign: 'center',
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--n400)', marginBottom: 'var(--sp1)' }}>
+              {lang === 'ko' ? '예상 대기 시간' : 'Est. wait'}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
+              <span style={{
+                fontSize: '1.8rem', fontWeight: 900, color: 'var(--n600)',
+                lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+              }}>
+                {position !== null ? (position - 1) * MINUTES_PER_PERSON : '—'}
+              </span>
+              {position !== null && (
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--n400)' }}>
+                  {lang === 'ko' ? '분' : 'min'}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {registeredAt && (
+          <p style={{ fontSize: '0.8rem', color: 'var(--n300)', marginBottom: 'var(--sp2)' }}>
+            {lang === 'ko' ? '등록 시간: ' : 'Registered: '}
+            {new Date(registeredAt).toLocaleTimeString(lang === 'ko' ? 'ko-KR' : 'en-US', {
+              hour: '2-digit', minute: '2-digit',
+            })}
+          </p>
+        )}
 
         <p style={{ fontSize: '0.875rem', color: 'var(--n400)', lineHeight: 1.7 }}>
           {lang === 'ko'
