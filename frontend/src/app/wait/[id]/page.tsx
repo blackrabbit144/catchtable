@@ -23,7 +23,7 @@ export default function WaitPage({ params }: Props) {
 
   async function handleCancel() {
     const msg = lang === 'ko'
-      ? '등록을 취소하시겠습니까?\n취소 후 다시 QR코드를 스캔하여 재등록할 수 있습니다.'
+      ? '등록을 취소하시겠습니까?\n취소하시면 기존 대기열에서 이탈합니다.\n취소 후 다시 QR코드를 스캔하여 재등록 할 수 있습니다.'
       : 'Cancel your registration?\nYou can re-register by scanning the QR code again.'
     if (!confirm(msg)) return
     setCancelling(true)

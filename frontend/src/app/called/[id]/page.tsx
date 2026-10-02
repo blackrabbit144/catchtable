@@ -68,8 +68,8 @@ export default function CalledPage({ params }: Props) {
           </p>
           <p style={{ fontSize: '0.875rem', color: 'var(--n500)', lineHeight: 1.7 }}>
             {lang === 'ko'
-              ? <>알림 후 10분안으로 도착해주시면 감사하겠습니다.<br />제한시간이 넘어가면 고객님 부재중으로 간주되어 다음 순번으로 넘어갑니다.</>
-              : <>Please arrive within 10 minutes of receiving this notification.<br />If you do not arrive in time, your number will be passed to the next customer.</>}
+              ? <>알림 후 5분안으로 도착해주시면 감사하겠습니다.<br />제한시간이 넘어가면 고객님 부재중으로 간주되어 다음 순번으로 넘어갑니다.</>
+              : <>Please arrive within 5 minutes of receiving this notification.<br />If you do not arrive in time, your number will be passed to the next customer.</>}
           </p>
         </div>
 
