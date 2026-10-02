@@ -142,6 +142,22 @@ a { color: inherit; text-decoration: none; }
 .field input:focus { border-color: var(--y300); box-shadow: 0 0 0 4px var(--y100); }
 .field input::placeholder { color: var(--n400); }
 
+/* 생년월일 연·월·일 드롭다운 (스크롤 선택 + 숫자 점프) */
+.birthSel {
+  width: 100%;
+  padding: 14px 10px;
+  border: 1.5px solid var(--n200);
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--n900);
+  background: var(--n0);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.birthSel:focus { border-color: var(--y300); box-shadow: 0 0 0 4px var(--y100); }
+
 /* ── Admin Layout ── */
 .adminWrap { min-height: 100vh; background: var(--n50); }
 .adminHeader {

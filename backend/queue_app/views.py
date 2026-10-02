@@ -1,15 +1,11 @@
-import hashlib
-import hmac
 import secrets
-import time
-import requests
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from common.sms import send_sms
 from .models import Customer, QueueSettings
 from .serializers import (
     CustomerSerializer, RegisterSerializer,
@@ -23,33 +19,7 @@ def _get_settings() -> QueueSettings:
 
 
 def _send_sms(phone: str, number: int) -> None:
-    if getattr(settings, 'LOAD_TEST_MODE', False):
-        return
-    api_key = settings.SOLAPI_API_KEY
-    api_secret = settings.SOLAPI_API_SECRET
-    sender = settings.SOLAPI_SENDER
-    if not api_key or not api_secret or not sender:
-        return
-    try:
-        date = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        salt = secrets.token_hex(16)
-        signature = hmac.new(
-            api_secret.encode(), f'{date}{salt}'.encode(), hashlib.sha256
-        ).hexdigest()
-        headers = {
-            'Authorization': f'HMAC-SHA256 apiKey={api_key}, date={date}, salt={salt}, signature={signature}',
-            'Content-Type': 'application/json',
-        }
-        body = {
-            'message': {
-                'to': phone,
-                'from': sender,
-                'text': f'[포켓몬카드샵] #{number}번 고객님, 입장해 주세요.\n주의: 이 번호는 가게번호가 아닙니다.',
-            }
-        }
-        requests.post('https://api.solapi.com/messages/v4/send', json=body, headers=headers, timeout=5)
-    except Exception:
-        pass
+    send_sms(phone, f'[포켓몬카드샵] #{number}번 고객님, 입장해 주세요.\n5분이내로 방문 부탁드리겠습니다.')
 
 
 # ── 고객: 대기 상태 확인 ──
