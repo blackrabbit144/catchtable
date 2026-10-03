@@ -150,11 +150,12 @@ def admin_pickup(request, code, entry_no):
     return Response({'entry_no': entry_no, 'picked_up_at': applicant.picked_up_at})
 
 
-# ── 관리자: 접수 시작 (매장별 · 응모자 초기화 · 토큰 재발급) ──
+# ── 관리자: 접수 시작 / 오늘의 QR 갱신 (데이터 삭제 안 함) ──
 @api_view(['POST'])
 def admin_open(request, code):
+    """접수를 열고 새 토큰(오늘의 QR)을 발급. 여러 날 이어지는 추첨이므로
+    응모 데이터는 삭제하지 않는다. 매일 호출하면 어제 QR만 무효화된다."""
     store = get_object_or_404(Store, code=code)
-    LotteryApplicant.objects.filter(store=store).delete()
     qs = _get_settings(store)
     qs.is_open = True
     qs.registration_token = secrets.token_urlsafe(32)
@@ -173,11 +174,17 @@ def admin_close(request, code):
     return Response({'store': store.code, 'is_open': False})
 
 
-# ── 관리자: 초기화 (매장별) ──
+# ── 관리자: 응모 데이터 삭제 + 접수 종료 (추첨 종료) ──
 @api_view(['POST'])
 def admin_reset(request, code):
+    """추첨이 최종 종료됐을 때 스태프 판단으로 호출. 응모 데이터를 삭제하고
+    접수를 닫아(토큰 폐기) 더 이상 등록되지 않게 한다."""
     store = get_object_or_404(Store, code=code)
     LotteryApplicant.objects.filter(store=store).delete()
+    qs = _get_settings(store)
+    qs.is_open = False
+    qs.registration_token = ''
+    qs.save()
     return Response({'detail': 'reset complete'})
 
 

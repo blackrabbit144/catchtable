@@ -88,19 +88,17 @@ export default function LotteryAdminPage() {
   }, [code, refresh])
 
   async function handleOpen() {
-    if (!confirm('추첨 접수를 시작합니다.\n이 매장의 기존 응모 데이터가 모두 삭제됩니다.\n계속하시겠습니까?')) return
+    const msg = isOpen
+      ? '오늘의 QR코드를 갱신합니다.\n기존(어제) QR은 사용할 수 없게 되고, 응모 데이터는 그대로 유지됩니다.\n계속하시겠습니까?'
+      : '추첨 접수를 시작하고 QR코드를 발급합니다.\n(응모 데이터는 삭제되지 않습니다)\n계속하시겠습니까?'
+    if (!confirm(msg)) return
     await lotteryApi.open(code)
     refresh()
   }
 
-  async function handleClose() {
-    if (!confirm('추첨 접수를 종료합니다.\n종료 후에는 새로운 응모를 받을 수 없습니다.\n계속하시겠습니까?')) return
-    await lotteryApi.close(code)
-    refresh()
-  }
-
   async function handleReset() {
-    if (!confirm('이 매장의 모든 응모 데이터를 삭제합니다.\n계속하시겠습니까?')) return
+    if (!confirm('⚠️ 추첨을 종료하고 이 매장의 모든 응모 데이터를 삭제합니다.\n삭제 후에는 복구할 수 없으며 접수도 닫힙니다.\n정말 계속하시겠습니까?')) return
+    if (!confirm('마지막 확인: 정말로 모든 응모 데이터를 삭제할까요?')) return
     await lotteryApi.reset(code)
     refresh()
   }
@@ -217,19 +215,15 @@ export default function LotteryAdminPage() {
               </span>
             </div>
             <div style={{ display: 'flex', gap: 'var(--sp2)' }}>
-              <button onClick={handleOpen} disabled={isOpen || !code} style={{
+              <button onClick={handleOpen} disabled={!code} style={{
                 flex: 1, padding: '10px', border: 'none', borderRadius: 'var(--r-sm)',
                 fontFamily: 'inherit', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
-                background: isOpen ? 'var(--n100)' : 'var(--y300)',
-                color: isOpen ? 'var(--n400)' : 'var(--n900)',
-              }}>접수 시작</button>
-              <button onClick={handleClose} disabled={!isOpen} style={{
-                flex: 1, padding: '10px', border: 'none', borderRadius: 'var(--r-sm)',
-                fontFamily: 'inherit', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
-                background: !isOpen ? 'var(--n100)' : 'var(--n800)',
-                color: !isOpen ? 'var(--n400)' : 'var(--n0)',
-              }}>접수 종료</button>
+                background: 'var(--y300)', color: 'var(--n900)',
+              }}>{isOpen ? '오늘의 QR 갱신' : '접수 시작 (QR 발급)'}</button>
             </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--n400)', lineHeight: 1.6, marginTop: 'var(--sp2)' }}>
+              매일 이 버튼으로 QR을 갱신하세요. 어제 QR은 무효화되고, 응모 데이터는 유지됩니다.
+            </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp2)' }}>
@@ -425,9 +419,9 @@ export default function LotteryAdminPage() {
         </div>
 
         <button onClick={handleReset} disabled={!code} style={{
-          background: 'none', border: 'none', fontSize: '0.8125rem', color: 'var(--n400)',
+          background: 'none', border: 'none', fontSize: '0.8125rem', color: 'oklch(55% 0.18 25)',
           cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit', marginTop: 'var(--sp2)',
-        }}>이 매장 응모 데이터 초기화</button>
+        }}>추첨 종료 · 응모 데이터 삭제</button>
 
       </div>
     </div>
