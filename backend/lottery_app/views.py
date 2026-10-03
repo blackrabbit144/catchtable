@@ -10,10 +10,10 @@ from rest_framework.response import Response
 
 from common.sms import send_sms
 from .excel import build_workbook, parse_winner_entry_nos
-from .models import Store, LotterySettings, LotteryApplicant
+from .models import Store, LotterySettings, LotteryApplicant, LotteryAuditLog
 from .serializers import (
     StoreSerializer, LotteryRegisterSerializer,
-    ReceiptSerializer, ApplicantAdminSerializer,
+    ReceiptSerializer, ApplicantAdminSerializer, AuditLogSerializer,
 )
 
 DEFAULT_WINNER_SMS_TEXT = (
@@ -100,6 +100,11 @@ def lottery_register(request):
                 is_child=True, device_id=device_id,
             )
 
+        LotteryAuditLog.objects.create(
+            store=store, action=LotteryAuditLog.ACTION_REGISTER,
+            name=name, phone=phone, entry_no=parent.entry_no, children_count=children_count,
+        )
+
     # 고객 응답은 명세서용(고유번호 미포함) + 명세서 URL 토큰
     return Response(ReceiptSerializer(parent).data, status=status.HTTP_201_CREATED)
 
@@ -116,9 +121,14 @@ def applicant_receipt(request, token):
 def lottery_cancel(request, token):
     """잘못 입력했을 때 본인이 취소. 같은 번호의 가족(부모+자녀) 응모를 함께 삭제."""
     applicant = get_object_or_404(LotteryApplicant, public_token=token)
+    name, phone, store = applicant.name, applicant.phone, applicant.store
     deleted, _ = LotteryApplicant.objects.filter(
-        store=applicant.store, phone=applicant.phone,
+        store=store, phone=phone,
     ).delete()
+    LotteryAuditLog.objects.create(
+        store=store, action=LotteryAuditLog.ACTION_CANCEL,
+        name=name, phone=phone, note=f'{deleted}건 삭제',
+    )
     return Response({'detail': 'cancelled', 'deleted': deleted}, status=status.HTTP_200_OK)
 
 
@@ -137,6 +147,14 @@ def admin_applicants(request, code):
         'count': applicants.count(),
         'applicants': ApplicantAdminSerializer(applicants, many=True).data,
     })
+
+
+# ── 관리자: 감사 로그 (등록/취소/삭제) ──
+@api_view(['GET'])
+def admin_audit(request, code):
+    store = get_object_or_404(Store, code=code)
+    logs = store.audit_logs.all()[:300]
+    return Response(AuditLogSerializer(logs, many=True).data)
 
 
 # ── 관리자: 상품 수령 체크 토글 ──
@@ -180,11 +198,14 @@ def admin_reset(request, code):
     """추첨이 최종 종료됐을 때 스태프 판단으로 호출. 응모 데이터를 삭제하고
     접수를 닫아(토큰 폐기) 더 이상 등록되지 않게 한다."""
     store = get_object_or_404(Store, code=code)
-    LotteryApplicant.objects.filter(store=store).delete()
+    deleted, _ = LotteryApplicant.objects.filter(store=store).delete()
     qs = _get_settings(store)
     qs.is_open = False
     qs.registration_token = ''
     qs.save()
+    LotteryAuditLog.objects.create(
+        store=store, action=LotteryAuditLog.ACTION_RESET, note=f'{deleted}건 삭제·접수 종료',
+    )
     return Response({'detail': 'reset complete'})
 
 

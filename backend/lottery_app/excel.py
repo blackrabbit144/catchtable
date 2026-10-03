@@ -8,8 +8,8 @@ HEADERS = ['고유번호', '이름', '전화번호', '생년월일', '자녀', '
 COL_ENTRY_NO = 1
 COL_WINNER = 7
 
-# 당첨여부 칸에 스태프가 기입하면 당첨으로 인정하는 값
-WINNER_MARKS = {'o', 'O', 'ㅇ', '당첨', '1', 'y', 'Y', 'yes', 'YES', 'true', 'TRUE'}
+# 당첨여부 칸에 스태프가 기입하면 당첨으로 인정하는 값 (대소문자 무시)
+WINNER_MARKS = {'o', 'ㅇ', '당첨', '1', 'y', 'yes', 'true', 'v', 'o', '✓', '○'}
 
 
 def build_workbook(applicants) -> bytes:
@@ -53,7 +53,7 @@ def parse_winner_entry_nos(file_obj) -> list:
         winner_cell = row[COL_WINNER - 1]
         if entry_cell is None or winner_cell is None:
             continue
-        if str(winner_cell).strip() in WINNER_MARKS:
+        if str(winner_cell).strip().lower() in WINNER_MARKS:
             try:
                 winners.append(int(entry_cell))
             except (ValueError, TypeError):

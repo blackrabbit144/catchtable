@@ -4,8 +4,17 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   lotteryApi, DEFAULT_WINNER_SMS,
-  type Store, type AdminApplicants, type ApplicantAdmin, type ImportResult, type SendSmsResult,
+  type Store, type AdminApplicants, type ApplicantAdmin, type ImportResult, type SendSmsResult, type AuditLog,
 } from '@/lib/api'
+
+const AUDIT_LABEL: Record<AuditLog['action'], string> = {
+  register: '등록', cancel: '취소', reset: '삭제',
+}
+const AUDIT_COLOR: Record<AuditLog['action'], { bg: string; fg: string }> = {
+  register: { bg: 'var(--b50)', fg: 'var(--b400)' },
+  cancel:   { bg: 'var(--n100)', fg: 'var(--n500)' },
+  reset:    { bg: '#fee2e2', fg: '#b91c1c' },
+}
 
 // 수령 날짜별 색상 (시인성)
 const PICKUP_COLORS = [
@@ -44,6 +53,8 @@ export default function LotteryAdminPage() {
   const [smsText, setSmsText]   = useState(DEFAULT_WINNER_SMS)
   const [sending, setSending]   = useState(false)
   const [sendResult, setSendResult] = useState<SendSmsResult | null>(null)
+  const [showAudit, setShowAudit]   = useState(false)
+  const [audit, setAudit]           = useState<AuditLog[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -82,6 +93,8 @@ export default function LotteryAdminPage() {
     setSendResult(null)
     setData(null)
     setSearch('')
+    setShowAudit(false)
+    setAudit([])
     refresh()
     const timer = setInterval(refresh, 5000)
     return () => clearInterval(timer)
@@ -105,6 +118,12 @@ export default function LotteryAdminPage() {
 
   function handleExport() {
     window.open(lotteryApi.exportUrl(code), '_blank')
+  }
+
+  async function handleToggleAudit() {
+    if (showAudit) { setShowAudit(false); return }
+    try { setAudit(await lotteryApi.getAudit(code)) } catch {}
+    setShowAudit(true)
   }
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -416,6 +435,44 @@ export default function LotteryAdminPage() {
             </div>
             )
           })}
+        </div>
+
+        {/* 감사 로그 (등록/취소/삭제) */}
+        <div>
+          <button onClick={handleToggleAudit} disabled={!code} style={{
+            background: 'none', border: 'none', fontSize: '0.8125rem', color: 'var(--n500)',
+            cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit',
+          }}>{showAudit ? '등록·취소 기록 숨기기' : '등록·취소 기록 보기'}</button>
+          {showAudit && (
+            <div className="listSection" style={{ marginTop: 'var(--sp3)' }}>
+              {audit.length === 0 ? (
+                <div style={{ padding: 'var(--sp6)', textAlign: 'center', color: 'var(--n400)', fontSize: '0.875rem' }}>
+                  기록이 없습니다.
+                </div>
+              ) : audit.map((lg, i) => {
+                const c = AUDIT_COLOR[lg.action]
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 'var(--sp3)',
+                    padding: '10px var(--sp6)', borderBottom: '1px solid var(--n100)', fontSize: 12,
+                  }}>
+                    <span style={{
+                      fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--r-full)',
+                      background: c.bg, color: c.fg, whiteSpace: 'nowrap',
+                    }}>{AUDIT_LABEL[lg.action]}</span>
+                    <span style={{ flex: 1, color: 'var(--n700)' }}>
+                      {lg.name || '-'} {lg.phone && <span style={{ color: 'var(--n400)' }}>{lg.phone}</span>}
+                      {lg.children_count > 0 && <span style={{ color: 'var(--b400)' }}> 자녀{lg.children_count}</span>}
+                      {lg.note && <span style={{ color: 'var(--n400)' }}> · {lg.note}</span>}
+                    </span>
+                    <span style={{ color: 'var(--n400)', whiteSpace: 'nowrap' }}>
+                      {new Date(lg.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <button onClick={handleReset} disabled={!code} style={{

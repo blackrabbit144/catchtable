@@ -125,6 +125,16 @@ export interface AdminApplicants {
   applicants: ApplicantAdmin[]
 }
 
+export interface AuditLog {
+  action: 'register' | 'cancel' | 'reset'
+  name: string
+  phone: string
+  entry_no: number | null
+  children_count: number
+  note: string
+  created_at: string
+}
+
 export interface ImportResult {
   marked: number
   total_winners: number
@@ -182,6 +192,7 @@ export const lotteryApi = {
   cancel:       (token: string) => request(`/lottery/receipt/${token}/cancel/`, { method: 'DELETE' }),
 
   getApplicants: (code: string) => request<AdminApplicants>(`/lottery/admin/${code}/applicants/`),
+  getAudit:      (code: string) => request<AuditLog[]>(`/lottery/admin/${code}/audit/`),
   setPickup:     (code: string, entryNo: number, pickedUp: boolean) =>
     request(`/lottery/admin/${code}/applicant/${entryNo}/pickup/`, {
       method: 'POST',

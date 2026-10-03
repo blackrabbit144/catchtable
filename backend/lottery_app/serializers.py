@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Store, LotteryApplicant
+from .models import Store, LotteryApplicant, LotteryAuditLog
 
 
 class StoreSerializer(serializers.ModelSerializer):
@@ -44,6 +44,12 @@ class ReceiptSerializer(serializers.ModelSerializer):
             store=obj.store, phone=obj.phone, is_child=True,
         ).order_by('entry_no')
         return [{'name': k.name, 'birthdate': k.birthdate} for k in kids]
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LotteryAuditLog
+        fields = ['action', 'name', 'phone', 'entry_no', 'children_count', 'note', 'created_at']
 
 
 class ApplicantAdminSerializer(serializers.ModelSerializer):

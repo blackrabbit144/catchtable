@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .excel import build_workbook, COL_WINNER
-from .models import Store, LotterySettings, LotteryApplicant
+from .models import Store, LotterySettings, LotteryApplicant, LotteryAuditLog
 
 
 class LotteryBase(APITestCase):
@@ -114,6 +114,24 @@ class RegisterTests(LotteryBase):
         cancel = self.client.delete(f'/api/lottery/receipt/{token}/cancel/')
         self.assertEqual(cancel.status_code, 200)
         self.assertEqual(LotteryApplicant.objects.filter(store=self.store).count(), 0)
+
+    def test_audit_log_register_cancel_reset(self):
+        res = self._register(name='김감사', children_count=1)
+        self.assertEqual(
+            LotteryAuditLog.objects.filter(store=self.store, action='register', name='김감사').count(), 1)
+        self.client.delete(f"/api/lottery/receipt/{res.data['public_token']}/cancel/")
+        self.assertEqual(LotteryAuditLog.objects.filter(store=self.store, action='cancel').count(), 1)
+        self.client.post('/api/lottery/admin/busan/reset/')
+        self.assertEqual(LotteryAuditLog.objects.filter(store=self.store, action='reset').count(), 1)
+        # 감사 로그는 응모 데이터 삭제(reset) 후에도 남는다
+        self.assertEqual(LotteryApplicant.objects.filter(store=self.store).count(), 0)
+        self.assertGreaterEqual(LotteryAuditLog.objects.filter(store=self.store).count(), 3)
+
+    def test_audit_api_returns_logs(self):
+        self._register(name='로그테스트')
+        res = self.client.get('/api/lottery/admin/busan/audit/')
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(any(x['name'] == '로그테스트' and x['action'] == 'register' for x in res.data))
 
     def test_entry_no_sequential_per_store(self):
         self._register(phone='010-0000-0001')

@@ -11,6 +11,7 @@ urlpatterns = [
 
     # 관리자 API (매장별)
     path('admin/<slug:code>/applicants/', views.admin_applicants, name='lottery-admin-applicants'),
+    path('admin/<slug:code>/audit/',      views.admin_audit,      name='lottery-admin-audit'),
     path('admin/<slug:code>/applicant/<int:entry_no>/pickup/', views.admin_pickup, name='lottery-admin-pickup'),
     path('admin/<slug:code>/open/',       views.admin_open,       name='lottery-admin-open'),
     path('admin/<slug:code>/close/',      views.admin_close,      name='lottery-admin-close'),

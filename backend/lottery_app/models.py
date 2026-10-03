@@ -58,3 +58,31 @@ class LotteryApplicant(models.Model):
 
     def __str__(self):
         return f'[{self.store.code}] #{self.entry_no} {self.name}'
+
+
+class LotteryAuditLog(models.Model):
+    """등록/취소/삭제 감사 로그. 응모 데이터가 삭제돼도 남는다(추적용)."""
+    ACTION_REGISTER = 'register'
+    ACTION_CANCEL   = 'cancel'
+    ACTION_RESET    = 'reset'
+    ACTION_CHOICES = [
+        (ACTION_REGISTER, '등록'),
+        (ACTION_CANCEL,   '취소'),
+        (ACTION_RESET,    '추첨종료·삭제'),
+    ]
+
+    store          = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='audit_logs')
+    action         = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    name           = models.CharField(max_length=100, blank=True, default='')
+    phone          = models.CharField(max_length=20, blank=True, default='')
+    entry_no       = models.IntegerField(null=True, blank=True)
+    children_count = models.IntegerField(default=0)
+    note           = models.CharField(max_length=200, blank=True, default='')
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '감사 로그'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'[{self.store.code}] {self.action} {self.name} {self.phone} @{self.created_at:%Y-%m-%d %H:%M}'
