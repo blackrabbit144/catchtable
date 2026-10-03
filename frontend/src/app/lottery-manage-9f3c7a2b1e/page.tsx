@@ -389,7 +389,9 @@ export default function LotteryAdminPage() {
               <span className="rowPhone">{a.phone}</span>
               {a.is_winner
                 ? <span className="rowStatus rowStatusD">{a.notified_at ? '발송완료' : '당첨'}</span>
-                : <span className="rowStatus rowStatusW">응모</span>}
+                : winnerCount > 0
+                  ? <span className="rowStatus" style={{ background: 'var(--n100)', color: 'var(--n400)' }}>낙첨</span>
+                  : <span className="rowStatus rowStatusW">응모</span>}
               {/* 수령 체크 + 날짜(색상) */}
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginLeft: 'auto' }}>
                 <input
