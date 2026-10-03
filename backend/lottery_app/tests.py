@@ -121,6 +121,9 @@ class RegisterTests(LotteryBase):
             LotteryAuditLog.objects.filter(store=self.store, action='register', name='김감사').count(), 1)
         self.client.delete(f"/api/lottery/receipt/{res.data['public_token']}/cancel/")
         self.assertEqual(LotteryAuditLog.objects.filter(store=self.store, action='cancel').count(), 1)
+        # 전화번호는 뒤 4자리만 남기고 마스킹되어 저장된다
+        reg_log = LotteryAuditLog.objects.get(store=self.store, action='register', name='김감사')
+        self.assertEqual(reg_log.phone, '*******2222')
         self.client.post('/api/lottery/admin/busan/reset/')
         self.assertEqual(LotteryAuditLog.objects.filter(store=self.store, action='reset').count(), 1)
         # 감사 로그는 응모 데이터 삭제(reset) 후에도 남는다

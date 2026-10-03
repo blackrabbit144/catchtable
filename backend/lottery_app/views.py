@@ -22,6 +22,14 @@ DEFAULT_WINNER_SMS_TEXT = (
 )
 
 
+def _mask_phone(phone: str) -> str:
+    """감사 로그용: 뒤 4자리만 남기고 마스킹 (개인정보 보호)."""
+    digits = ''.join(c for c in phone if c.isdigit())
+    if not digits:
+        return ''
+    return '*' * max(0, len(digits) - 4) + digits[-4:]
+
+
 def _get_settings(store: Store) -> LotterySettings:
     obj, _ = LotterySettings.objects.get_or_create(store=store)
     return obj
@@ -102,7 +110,7 @@ def lottery_register(request):
 
         LotteryAuditLog.objects.create(
             store=store, action=LotteryAuditLog.ACTION_REGISTER,
-            name=name, phone=phone, entry_no=parent.entry_no, children_count=children_count,
+            name=name, phone=_mask_phone(phone), entry_no=parent.entry_no, children_count=children_count,
         )
 
     # 고객 응답은 명세서용(고유번호 미포함) + 명세서 URL 토큰
@@ -127,7 +135,7 @@ def lottery_cancel(request, token):
     ).delete()
     LotteryAuditLog.objects.create(
         store=store, action=LotteryAuditLog.ACTION_CANCEL,
-        name=name, phone=phone, note=f'{deleted}건 삭제',
+        name=name, phone=_mask_phone(phone), note=f'{deleted}건 삭제',
     )
     return Response({'detail': 'cancelled', 'deleted': deleted}, status=status.HTTP_200_OK)
 
