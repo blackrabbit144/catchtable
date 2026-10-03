@@ -19,10 +19,13 @@ class LotteryBase(APITestCase):
         )
 
     def _register(self, phone='010-1111-2222', name='홍길동', children_count=0,
-                  token='TOK', code='busan', birthdate='1990-01-01'):
+                  children=None, token='TOK', code='busan', birthdate='1990-01-01'):
+        if children is None:
+            # children_count 개의 자녀를 자동 생성 (각자 이름·생년월일)
+            children = [{'name': f'아이{i+1}', 'birthdate': '2015-01-01'} for i in range(children_count)]
         return self.client.post('/api/lottery/register/', {
             'store': code, 'token': token, 'name': name,
-            'phone': phone, 'birthdate': birthdate, 'children_count': children_count,
+            'phone': phone, 'birthdate': birthdate, 'children': children,
         }, format='json')
 
 
@@ -85,6 +88,25 @@ class RegisterTests(LotteryBase):
         res = self._register(children_count=10)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['detail'], 'limit')
+
+    def test_children_store_own_name_birthdate_phone_shared(self):
+        # 자녀는 각자 이름·생년월일을 저장, 전화번호는 부모 공유
+        self._register(name='부모', children=[
+            {'name': '자녀A', 'birthdate': '2016-03-03'},
+            {'name': '자녀B', 'birthdate': '2018-07-07'},
+        ])
+        kids = LotteryApplicant.objects.filter(store=self.store, is_child=True).order_by('entry_no')
+        self.assertEqual([k.name for k in kids], ['자녀A', '자녀B'])
+        self.assertEqual(str(kids[0].birthdate), '2016-03-03')
+        self.assertTrue(all(k.phone == '010-1111-2222' for k in kids))  # 부모 번호 공유
+
+    def test_receipt_includes_children(self):
+        res = self._register(name='부모', children=[{'name': '자녀A', 'birthdate': '2016-03-03'}])
+        r = self.client.get(f"/api/lottery/receipt/{res.data['public_token']}/")
+        self.assertEqual(r.data['children_count'], 1)
+        self.assertEqual(len(r.data['children']), 1)
+        self.assertEqual(r.data['children'][0]['name'], '자녀A')
+        self.assertEqual(str(r.data['children'][0]['birthdate']), '2016-03-03')
 
     def test_cancel_removes_whole_family(self):
         res = self._register(children_count=2)

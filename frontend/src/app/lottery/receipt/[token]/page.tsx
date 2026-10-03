@@ -115,6 +115,19 @@ export default function ReceiptPage({ params }: Props) {
               ? (lang === 'ko' ? `${receipt.children_count}명` : `${receipt.children_count}`)
               : (lang === 'ko' ? '없음' : 'None'),
           )}
+          {receipt.children.map((c, i) => (
+            <div key={i} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: 'var(--sp3) 0 var(--sp3) var(--sp4)', borderBottom: '1px solid var(--n100)',
+            }}>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--n500)' }}>
+                {lang === 'ko' ? `자녀 ${i + 1}` : `Child ${i + 1}`}
+              </span>
+              <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--n800)' }}>
+                {c.name} · {c.birthdate}
+              </span>
+            </div>
+          ))}
         </div>
 
         <p style={{ fontSize: '0.8125rem', color: 'var(--n400)', lineHeight: 1.7, marginTop: 'var(--sp6)', textAlign: 'center' }}>

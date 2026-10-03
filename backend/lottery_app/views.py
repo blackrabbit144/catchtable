@@ -65,7 +65,8 @@ def lottery_register(request):
     name           = data['name']
     birthdate      = data['birthdate']
     device_id      = data.get('device_id', '')
-    children_count = data['children_count']
+    children       = data['children']
+    children_count = len(children)
 
     with transaction.atomic():
         # 매장별 설정 행을 잠가 채번/중복판정을 직렬화
@@ -89,11 +90,12 @@ def lottery_register(request):
             has_children=children_count > 0, children_count=children_count,
             is_child=False, device_id=device_id,
         )
-        # 자녀 행 (부모 정보 유용, 각자 추첨 1매) — 같은 번호(1등록 내)이므로 허용
-        for i in range(children_count):
+        # 자녀 행: 각자 고유의 이름·생년월일을 저장. 전화번호는 부모 번호를 공유
+        # (자녀 본인 번호는 받지 않음 / 당첨 통지는 부모 번호로 묶여서 발송됨)
+        for i, child in enumerate(children):
             LotteryApplicant.objects.create(
                 store=store, entry_no=base + 2 + i,
-                name=f'{name} (자녀 {i + 1})', phone=phone, birthdate=birthdate,
+                name=child['name'], phone=phone, birthdate=child['birthdate'],
                 has_children=False, children_count=0,
                 is_child=True, device_id=device_id,
             )

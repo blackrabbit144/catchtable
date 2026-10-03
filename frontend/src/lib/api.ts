@@ -77,6 +77,11 @@ export interface Store {
   code: string
 }
 
+export interface ChildInfo {
+  name: string
+  birthdate: string
+}
+
 // 顧客向け明細書: 固有番号(entry_no)は絶対に含まれない
 export interface Receipt {
   public_token: string
@@ -85,6 +90,7 @@ export interface Receipt {
   phone: string
   birthdate: string
   children_count: number
+  children: ChildInfo[]
   registered_at: string
 }
 
@@ -163,7 +169,7 @@ export interface LotteryRegisterInput {
   name: string
   phone: string
   birthdate: string
-  children_count: number
+  children: ChildInfo[]
   device_id: string
 }
 

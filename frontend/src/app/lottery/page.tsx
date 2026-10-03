@@ -47,7 +47,7 @@ function LotteryForm() {
   const [birthYear, setBirthYear]     = useState('')
   const [birthMonth, setBirthMonth]   = useState('')
   const [birthDay, setBirthDay]       = useState('')
-  const [childrenCount, setChildrenCount] = useState(0)
+  const [children, setChildren]       = useState<{ name: string; by: string; bm: string; bd: string }[]>([])
   const [agreed, setAgreed]           = useState(false)
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
@@ -62,6 +62,27 @@ function LotteryForm() {
     const max = daysInMonth(Number(y), Number(m))
     if (birthDay && Number(birthDay) > max) setBirthDay(pad2(max))
   }
+
+  // 자녀 수 변경 → 입력란 배열 리사이즈(기존 입력 유지)
+  function setChildCount(n: number) {
+    setChildren(prev => {
+      const next = prev.slice(0, n)
+      while (next.length < n) next.push({ name: '', by: '', bm: '', bd: '' })
+      return next
+    })
+  }
+  function updateChild(i: number, patch: Partial<{ name: string; by: string; bm: string; bd: string }>) {
+    setChildren(prev => prev.map((c, idx) => {
+      if (idx !== i) return c
+      const merged = { ...c, ...patch }
+      // 월/년 변경 시 일수 보정
+      const max = daysInMonth(Number(merged.by), Number(merged.bm))
+      if (merged.bd && Number(merged.bd) > max) merged.bd = pad2(max)
+      return merged
+    }))
+  }
+  const childBirth = (c: { by: string; bm: string; bd: string }) =>
+    c.by && c.bm && c.bd ? `${c.by}-${c.bm}-${c.bd}` : ''
 
   useEffect(() => {
     if (!store || !token) return
@@ -80,6 +101,16 @@ function LotteryForm() {
         : 'Please enter a valid date of birth. (e.g. 1998-03-15)')
       return
     }
+    // 자녀 입력 검증
+    for (let i = 0; i < children.length; i++) {
+      const c = children[i]
+      if (!c.name.trim() || !isValidBirth(childBirth(c))) {
+        setError(lang === 'ko'
+          ? `자녀 ${i + 1}의 이름과 생년월일을 올바르게 입력해주세요.`
+          : `Please enter child ${i + 1}'s name and date of birth.`)
+        return
+      }
+    }
     setLoading(true)
     setError('')
     try {
@@ -88,7 +119,7 @@ function LotteryForm() {
         name: name.trim(),
         phone: phone.trim(),
         birthdate,
-        children_count: childrenCount,
+        children: children.map(c => ({ name: c.name.trim(), birthdate: childBirth(c) })),
         device_id: getOrCreateDeviceId(),
       })
       router.push(`/lottery/receipt/${receipt.public_token}`)
@@ -213,18 +244,58 @@ function LotteryForm() {
           <label>{lang === 'ko' ? '동반 자녀 수' : 'Number of children'}</label>
           <select
             className="birthSel"
-            value={childrenCount}
-            onChange={e => setChildrenCount(Number(e.target.value))}
+            value={children.length}
+            onChange={e => setChildCount(Number(e.target.value))}
           >
             {Array.from({ length: 10 }, (_, i) => i).map(n =>
               <option key={n} value={n}>{n === 0 ? (lang === 'ko' ? '없음' : 'None') : `${n}${lang === 'ko' ? '명' : ''}`}</option>)}
           </select>
           <span style={{ fontSize: '0.8125rem', color: 'var(--n500)', lineHeight: 1.6, marginTop: 4 }}>
             {lang === 'ko'
-              ? '스마트폰이 없는 자녀는 같은 번호로 함께 응모됩니다. 직원이 현장에서 자녀 동반 여부를 확인합니다.'
-              : 'Children without a smartphone are entered under the same number. Staff verify this on site.'}
+              ? '스마트폰이 없는 자녀는 부모님 번호로 함께 응모됩니다(자녀 전화번호는 받지 않음). 직원이 현장에서 확인합니다.'
+              : "Children without a smartphone are entered under the parent's number (no child phone). Staff verify on site."}
           </span>
         </div>
+
+        {/* 자녀별 이름 + 생년월일 입력 */}
+        {children.map((c, i) => (
+          <div key={i} style={{
+            marginBottom: 'var(--sp4)', padding: 'var(--sp4)',
+            background: 'var(--n50)', borderRadius: 'var(--r-sm)',
+            display: 'flex', flexDirection: 'column', gap: 'var(--sp3)',
+          }}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--n600)' }}>
+              {lang === 'ko' ? `자녀 ${i + 1}` : `Child ${i + 1}`}
+            </span>
+            <div className="field">
+              <label>{lang === 'ko' ? '이름' : 'Name'}</label>
+              <input type="text" placeholder={lang === 'ko' ? '자녀 이름' : "Child's name"}
+                value={c.name} onChange={e => updateChild(i, { name: e.target.value })} required />
+            </div>
+            <div className="field">
+              <label>{lang === 'ko' ? '생년월일' : 'Date of Birth'}</label>
+              <div style={{ display: 'flex', gap: 'var(--sp2)' }}>
+                <select className="birthSel" style={{ flex: 1.3 }} value={c.by}
+                  onChange={e => updateChild(i, { by: e.target.value })} required>
+                  <option value="" disabled>{lang === 'ko' ? '년' : 'Year'}</option>
+                  {YEARS.map(y => <option key={y} value={String(y)}>{y}</option>)}
+                </select>
+                <select className="birthSel" style={{ flex: 1 }} value={c.bm}
+                  onChange={e => updateChild(i, { bm: e.target.value })} required>
+                  <option value="" disabled>{lang === 'ko' ? '월' : 'Mon'}</option>
+                  {Array.from({ length: 12 }, (_, m) => m + 1).map(m =>
+                    <option key={m} value={pad2(m)}>{m}</option>)}
+                </select>
+                <select className="birthSel" style={{ flex: 1 }} value={c.bd}
+                  onChange={e => updateChild(i, { bd: e.target.value })} required>
+                  <option value="" disabled>{lang === 'ko' ? '일' : 'Day'}</option>
+                  {Array.from({ length: daysInMonth(Number(c.by), Number(c.bm)) }, (_, d) => d + 1).map(d =>
+                    <option key={d} value={pad2(d)}>{d}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        ))}
 
         <label style={{
           display: 'flex', alignItems: 'flex-start', gap: 'var(--sp3)',
