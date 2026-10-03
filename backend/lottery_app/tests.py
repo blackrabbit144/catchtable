@@ -49,16 +49,26 @@ class RegisterTests(LotteryBase):
     def test_invalid_token_rejected(self):
         self.assertEqual(self._register(token='WRONG').status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_plain_duplicate_auto_dedup(self):
-        # 자녀 없는 동일 번호 재응모 → 이전 것이 자동 삭제되고 최신만 남음
+    def test_reregister_replaces_family(self):
+        # 1번호=1등록. 같은 번호 재등록은 이전 가족을 교체한다.
+        # 자녀 없이 재등록 → 최신만 남음
         self.assertEqual(self._register(name='처음').status_code, 201)
         self.assertEqual(self._register(name='수정').status_code, 201)
         rows = LotteryApplicant.objects.filter(store=self.store, phone='010-1111-2222')
         self.assertEqual(rows.count(), 1)
         self.assertEqual(rows.first().name, '수정')
 
+    def test_reregister_with_children_replaces_not_stacks(self):
+        # 자녀2로 등록(3행) → 같은 번호로 자녀1 재등록 → 적재되지 않고 교체(2행)
+        self._register(children_count=2)
+        self.assertEqual(LotteryApplicant.objects.filter(store=self.store, phone='010-1111-2222').count(), 3)
+        self._register(children_count=1)
+        rows = LotteryApplicant.objects.filter(store=self.store, phone='010-1111-2222')
+        self.assertEqual(rows.count(), 2)
+        self.assertEqual(rows.get(is_child=False).children_count, 1)
+
     def test_children_create_extra_rows_same_phone(self):
-        # 자녀 3명 → 부모1 + 자녀3 = 4행, 모두 같은 번호(중복 허용)
+        # 자녀 3명 → 부모1 + 자녀3 = 4행 (1회 등록 내)
         res = self._register(children_count=3)
         self.assertEqual(res.status_code, 201)
         rows = LotteryApplicant.objects.filter(store=self.store, phone='010-1111-2222')
@@ -69,11 +79,6 @@ class RegisterTests(LotteryBase):
         # 명세서(고객 응답)에 자녀 수가 보이고 고유번호는 없음
         self.assertEqual(res.data['children_count'], 3)
         self.assertNotIn('entry_no', res.data)
-
-    def test_children_rows_are_duplicates_and_kept(self):
-        # 자녀 응모(중복)는 dedup 대상이 아니다
-        self._register(children_count=2)
-        self.assertEqual(LotteryApplicant.objects.filter(store=self.store).count(), 3)
 
     def test_limit_on_family_size(self):
         # 부모1 + 자녀10 = 11 > max_per_phone(10) → limit

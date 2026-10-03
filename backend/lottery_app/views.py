@@ -75,6 +75,10 @@ def lottery_register(request):
         if 1 + children_count > qs.max_per_phone:
             return Response({'detail': 'limit'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # 1번호 = 항상 1등록. 같은 번호의 기존 가족(부모+자녀)을 모두 삭제하고
+        # 새로 등록 = 교체. (중복/물량 적재 방지, 잘못 입력 시 재등록으로 수정 가능)
+        LotteryApplicant.objects.filter(store=store, phone=phone).delete()
+
         last = LotteryApplicant.objects.filter(store=store).order_by('-entry_no').first()
         base = last.entry_no if last else 0
 
@@ -85,7 +89,7 @@ def lottery_register(request):
             has_children=children_count > 0, children_count=children_count,
             is_child=False, device_id=device_id,
         )
-        # 자녀 행 (부모 정보 유용, 각자 추첨 1매) — 같은 번호 중복이지만 허용
+        # 자녀 행 (부모 정보 유용, 각자 추첨 1매) — 같은 번호(1등록 내)이므로 허용
         for i in range(children_count):
             LotteryApplicant.objects.create(
                 store=store, entry_no=base + 2 + i,
@@ -93,13 +97,6 @@ def lottery_register(request):
                 has_children=False, children_count=0,
                 is_child=True, device_id=device_id,
             )
-
-        # 중복 정리: 자녀 표시가 없는(plain) 동일 번호 응모가 여러 개면
-        # 최신(이번) 것만 남기고 이전 것을 자동 삭제한다.
-        if children_count == 0:
-            LotteryApplicant.objects.filter(
-                store=store, phone=phone, is_child=False, children_count=0,
-            ).exclude(pk=parent.pk).delete()
 
     # 고객 응답은 명세서용(고유번호 미포함) + 명세서 URL 토큰
     return Response(ReceiptSerializer(parent).data, status=status.HTTP_201_CREATED)
