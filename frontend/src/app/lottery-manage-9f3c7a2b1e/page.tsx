@@ -379,14 +379,18 @@ export default function LotteryAdminPage() {
           ) : applicants.map(a => {
             const c = a.picked_up_at ? pickupColor(a.picked_up_at) : null
             return (
-            <div key={a.entry_no} className={`listRow${a.is_winner ? ' listRowDone' : ''}`}>
-              <span className="rowNum">#{a.entry_no}</span>
-              <span className="rowName">
+            <div key={a.entry_no} style={{
+              display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+              columnGap: 'var(--sp3)', rowGap: 6, padding: '12px var(--sp6)',
+              borderBottom: '1px solid var(--n100)',
+            }}>
+              {/* 1行目: 番号・名前・当落・受取 */}
+              <span className="rowNum" style={{ minWidth: 34 }}>#{a.entry_no}</span>
+              <span className="rowName" style={{ flex: '1 1 110px' }}>
                 {a.name}
                 {a.is_child && <span style={{ fontSize: 11, color: 'var(--b400)', marginLeft: 4 }}>👶</span>}
                 {a.children_count > 0 && <span style={{ fontSize: 11, color: 'var(--b400)', marginLeft: 4 }}>👨‍👧 {a.children_count}</span>}
               </span>
-              <span className="rowPhone">{a.phone}</span>
               {a.is_winner
                 ? <span className="rowStatus rowStatusD">{a.notified_at ? '발송완료' : '당첨'}</span>
                 : winnerCount > 0
@@ -407,6 +411,14 @@ export default function LotteryAdminPage() {
                     }}>수령 {fmtPickup(a.picked_up_at)}</span>
                   : <span style={{ fontSize: 11, color: 'var(--n400)', whiteSpace: 'nowrap' }}>수령</span>}
               </label>
+              {/* 2行目: 電話番号・生年月日 (全幅) */}
+              <div style={{
+                flexBasis: '100%', display: 'flex', flexWrap: 'wrap', gap: 'var(--sp4)',
+                paddingLeft: 34, fontSize: 12, color: 'var(--n500)', fontVariantNumeric: 'tabular-nums',
+              }}>
+                <span>📞 {a.phone}</span>
+                <span>🎂 {a.birthdate}</span>
+              </div>
             </div>
             )
           })}
